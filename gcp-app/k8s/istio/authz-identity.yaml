@@ -1,0 +1,33 @@
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: b-allow-public-from-a
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: service-b
+  action: ALLOW
+  rules:
+  - from:
+    - source:
+        principals: ["cluster.local/ns/default/sa/service-a"]
+    to:
+    - operation:
+        methods: ["GET"]
+        paths: ["/public"]
+        ports: ["8080"]
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: b-deny-all-else
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: service-b
+  action: DENY
+  rules:
+  - to:
+    - operation: {}
