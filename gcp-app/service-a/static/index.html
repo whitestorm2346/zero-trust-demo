@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Zero Trust Demo</title>
+    <style>
+      body {
+        font-family: "Segoe UI", Arial, sans-serif;
+        background: #f7f9fb;
+        color: #333;
+        text-align: center;
+        margin: 0;
+        padding: 0;
+      }
+      header {
+        background: #0057b8;
+        color: white;
+        padding: 15px;
+        font-size: 22px;
+        font-weight: bold;
+      }
+      .status-bar {
+        display: flex;
+        justify-content: center;
+        gap: 25px;
+        padding: 10px;
+        background: #eaf2ff;
+        font-size: 16px;
+      }
+      .status-item {
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        padding: 10px 20px;
+      }
+      button {
+        margin: 20px 10px;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 8px;
+        background: #0078d7;
+        color: white;
+        font-size: 16px;
+        cursor: pointer;
+      }
+      button:hover {
+        background: #005ea1;
+      }
+      #result {
+        margin-top: 20px;
+        font-size: 15px;
+        color: #444;
+        white-space: pre-wrap;
+      }
+    </style>
+  </head>
+  <body>
+    <header>Zero Trust Cloud-Native Demo</header>
+
+    <div class="status-bar">
+      <div class="status-item" id="ingress-status">Ingress: ⏳ Checking...</div>
+      <div class="status-item" id="sidecar-status">Sidecar: ⏳ Checking...</div>
+      <div class="status-item" id="egress-status">Egress: ⏳ Checking...</div>
+    </div>
+
+    <div class="actions">
+      <button id="public">Call Public</button>
+      <button id="private">Call Private</button>
+      <button id="external">Call External</button>
+    </div>
+
+    <div id="result">Ready.</div>
+
+    <script>
+      // 1️⃣ 檢查Ingress：能連上這個頁面代表Ingress工作正常
+      document.getElementById("ingress-status").innerText =
+        "Ingress: ✅ Active";
+
+      // 2️⃣ 檢查Sidecar：試著呼叫 /call/public，看內部通訊是否通
+      fetch("/call/public")
+        .then((res) => {
+          document.getElementById("sidecar-status").innerText = res.ok
+            ? "Sidecar: ✅ Connected"
+            : "Sidecar: ⚠️ Unreachable";
+        })
+        .catch(() => {
+          document.getElementById("sidecar-status").innerText =
+            "Sidecar: ❌ Failed";
+        });
+
+      // 3️⃣ 檢查Egress：試著呼叫 /call/ext，看是否能連外
+      fetch("/call/ext")
+        .then((res) => {
+          document.getElementById("egress-status").innerText = res.ok
+            ? "Egress: ✅ Connected"
+            : "Egress: ⚠️ Blocked";
+        })
+        .catch(() => {
+          document.getElementById("egress-status").innerText =
+            "Egress: ❌ Failed";
+        });
+
+      // 4️⃣ 三個按鈕行為
+      const resultDiv = document.getElementById("result");
+
+      document.getElementById("public").onclick = async () => {
+        const res = await fetch("/call/public");
+        resultDiv.innerText = await res.text();
+      };
+
+      document.getElementById("private").onclick = async () => {
+        const username = prompt("Username?");
+        const password = prompt("Password?");
+        const res = await fetch("/call/private", {
+          headers: {
+            Authorization: "Basic " + btoa(username + ":" + password),
+          },
+        });
+        const text = await res.text();
+        document.getElementById("result").innerText = text;
+      };
+
+      document.getElementById("external").onclick = async () => {
+        const res = await fetch("/call/ext");
+        resultDiv.innerText = await res.text();
+      };
+    </script>
+  </body>
+</html>

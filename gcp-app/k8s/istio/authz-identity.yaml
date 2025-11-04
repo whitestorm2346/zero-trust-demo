@@ -1,7 +1,28 @@
+# gcp-app/k8s/istio/authz-identity.yaml
+
+# 1) /public 開放
 apiVersion: security.istio.io/v1beta1
 kind: AuthorizationPolicy
 metadata:
-  name: b-allow-public-from-a
+  name: b-allow-public
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: service-b
+  action: ALLOW
+  rules:
+  - to:
+    - operation:
+        methods: ["GET"]
+        paths: ["/public"]
+
+---
+# 2) /private 只給 service-a 這個 SA
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: b-allow-private-from-service-a
   namespace: default
 spec:
   selector:
@@ -15,13 +36,14 @@ spec:
     to:
     - operation:
         methods: ["GET"]
-        paths: ["/public"]
-        ports: ["8080"]
+        paths: ["/private"]
+
 ---
+# 3) 其他一律拒絕
 apiVersion: security.istio.io/v1beta1
 kind: AuthorizationPolicy
 metadata:
-  name: b-deny-all-else
+  name: b-deny-all-others
   namespace: default
 spec:
   selector:
@@ -30,4 +52,6 @@ spec:
   action: DENY
   rules:
   - to:
-    - operation: {}
+    - operation:
+        methods: ["*"]
+        paths: ["*"]

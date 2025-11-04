@@ -1,0 +1,55 @@
+# 將 mesh 內對 httpbin.org 的流量先導向 Egress Gateway
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: egressgateway-for-httpbin
+  namespace: default
+spec:
+  host: istio-egressgateway.istio-system.svc.cluster.local
+  subsets:
+  - name: httpbin
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: direct-through-egressgateway
+  namespace: default
+spec:
+  hosts:
+  - "httpbin.org"
+  gateways:
+  - mesh
+  tls:
+  - match:
+    - port: 443
+      sniHosts:
+      - "httpbin.org"
+    route:
+    - destination:
+        host: istio-egressgateway.istio-system.svc.cluster.local
+        subset: httpbin
+        port:
+          number: 443
+      weight: 100
+---
+# 再從 Egress Gateway 轉送到外部 httpbin.org
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: from-egressgateway-to-httpbin
+  namespace: istio-system
+spec:
+  hosts:
+  - "httpbin.org"
+  gateways:
+  - istio-egressgateway
+  tls:
+  - match:
+    - port: 443
+      sniHosts:
+      - "httpbin.org"
+    route:
+    - destination:
+        host: httpbin.org
+        port:
+          number: 443
