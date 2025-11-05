@@ -5,7 +5,8 @@ PROJECT_ID=zero-trust-demo-475103  \
 REGION=asia-east1 \
 ZONE=asia-east1-b \
 REPO=gcp-app \
-CLUSTER=zta-cluster
+CLUSTER=zta-cluster \
+ROUTER=gke-nat-router
 ```
 
 **建立 GKE cluster（Cloud 原生環境）**
@@ -51,6 +52,16 @@ docker build -t $REGION-docker.pkg.dev/$PROJECT_ID/$REPO/service-b:v1 gcp-app/se
 docker push $REGION-docker.pkg.dev/$PROJECT_ID/$REPO/service-b:v1
 ```
 
+**Set Image**
+
+```bash
+kubectl -n default set image deploy/service-a \
+ app=$REGION-docker.pkg.dev/$PROJECT_ID/gcp-app/service-a:v2
+
+kubectl -n default rollout status deploy/service-a
+
+```
+
 **安裝 Istio**
 
 ```bash
@@ -90,11 +101,11 @@ kubectl get svc -n istio-system
 
 複製 `EXTERNAL-IP` 記下來，用來測試網站。
 
-**建立 egress**
+**建立 egress 假外部**
 
 ```bash
-kubectl apply -f gcp-app/k8s/istio/egress-httpbin.yaml
-kubectl apply -f gcp-app/k8s/istio/egress-route.yaml
+kubectl apply -f gcp-app/k8s/ext-external.yaml
+kubectl apply -f gcp-app/k8s/istio/egress-fake-external.yaml
 ```
 
 **套用 Identity-tier Policy（加強側邊安全）**
@@ -125,10 +136,20 @@ curl -v http://service-b:8080/public    # 要 200
 curl -v http://service-b:8080/private   # 要 403
 ```
 
-**Local Docker 測試**
+**建立 Cloud Router**
 
 ```bash
-cd gcp-app/service-a
-docker build -t service-a:local .
-docker run -p 8080:8080 service-a:local
+gcloud compute routers create gke-nat-router \
+  --network=default \
+  --region=$REGION
+```
+
+**建立 Cloud NAT 設定**
+
+```bash
+gcloud compute routers nats create nat-config \
+  --router=$ROUTER \
+  --router-region=$REGION \
+  --nat-all-subnet-ip-ranges \
+  --auto-allocate-nat-external-ips
 ```

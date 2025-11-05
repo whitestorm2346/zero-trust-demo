@@ -1,0 +1,36 @@
+# ext-external.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ext-demo
+  labels:
+    # 重點：這行會讓這個 ns 不被 auto / revision injector 注入
+    istio-injection: disabled
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: ext-http
+  namespace: ext-demo
+  labels:
+    app: ext-http
+spec:
+  containers:
+    - name: nginx
+      image: nginx:1.25
+      ports:
+        - containerPort: 80
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ext-http
+  namespace: ext-demo
+spec:
+  selector:
+    app: ext-http
+  ports:
+    - port: 80
+      targetPort: 80

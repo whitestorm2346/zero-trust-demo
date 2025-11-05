@@ -73,7 +73,7 @@ def call_private(user: str = Depends(get_current_user)):
 def call_ext():
     try:
         with httpx.Client(timeout=5.0) as client:
-            resp = client.get("https://httpbin.org/get")
+            resp = client.get("http://ext-http.ext-demo.svc.cluster.local")
         return {
             "ok": resp.status_code == 200,
             "status_code": resp.status_code,

@@ -1,0 +1,108 @@
+# 1) 告訴 mesh：有一個外部服務叫這個名字
+apiVersion: networking.istio.io/v1beta1
+kind: ServiceEntry
+metadata:
+  name: ext-http-external
+  namespace: default
+spec:
+  hosts:
+    - ext-http.ext-demo.svc.cluster.local
+  ports:
+    - number: 80
+      name: http
+      protocol: HTTP
+  resolution: DNS
+  location: MESH_EXTERNAL
+
+---
+# 2) 在 egress gateway 上開一個 HTTP 的出口給這個「外部」用
+apiVersion: networking.istio.io/v1beta1
+kind: Gateway
+metadata:
+  name: ext-http-egress-gateway
+  namespace: istio-system
+spec:
+  selector:
+    app: istio-egressgateway      # 你剛剛查到的 label
+  servers:
+    - port:
+        number: 80
+        name: http
+        protocol: HTTP
+      hosts:
+        - ext-http.ext-demo.svc.cluster.local
+
+---
+# 3) mesh 裡的 pod 要打 ext-http → 先送到 egress gateway
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: ext-http-via-egress
+  namespace: default
+spec:
+  hosts:
+    - ext-http.ext-demo.svc.cluster.local
+  gateways:
+    - mesh
+    - istio-system/ext-http-egress-gateway
+  http:
+    - route:
+        - destination:
+            host: istio-egressgateway.istio-system.svc.cluster.local
+            port:
+              number: 80
+
+---
+# 4) egress gateway 收到之後 → 真正轉回 cluster 裡的那個 ext-demo 服務
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: ext-http-from-egress
+  namespace: istio-system
+spec:
+  hosts:
+    - ext-http.ext-demo.svc.cluster.local
+  gateways:
+    - ext-http-egress-gateway
+  http:
+    - route:
+        - destination:
+            host: ext-http.ext-demo.svc.cluster.local
+            port:
+              number: 80
+
+---
+# 5) 只讓 default ns 裡、SA=service-a 的 workload 可以用這條 egress
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-service-a-to-ext-http
+  namespace: istio-system
+spec:
+  selector:
+    matchLabels:
+      app: istio-egressgateway     # 你的 egress gateway 的 label
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            principals:
+              - "spiffe://cluster.local/ns/default/sa/service-a"
+      to:
+        - operation:
+            hosts: ["ext-http.ext-demo.svc.cluster.local"]
+
+---
+# 6) （可選，但 demo 比較漂亮）把其他都擋掉
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: deny-others-to-ext-http
+  namespace: istio-system
+spec:
+  selector:
+    matchLabels:
+      app: istio-egressgateway
+  action: DENY
+  rules:
+    - {}
