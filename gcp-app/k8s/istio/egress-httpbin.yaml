@@ -1,17 +1,28 @@
+# --- egress-httpbin.yaml ---
+
 apiVersion: networking.istio.io/v1beta1
 kind: ServiceEntry
 metadata:
-  name: httpbin
+  name: httpbin-external
   namespace: default
 spec:
   hosts:
-  - "httpbin.org"
+    - httpbin.org
   ports:
-  - number: 80
-    name: http
-    protocol: HTTP
-  - number: 443
-    name: https
-    protocol: TLS
+    - number: 443
+      name: https
+      protocol: TLS
   resolution: DNS
   location: MESH_EXTERNAL
+
+---
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: httpbin-external
+  namespace: default
+spec:
+  host: httpbin.org
+  trafficPolicy:
+    tls:
+      mode: SIMPLE

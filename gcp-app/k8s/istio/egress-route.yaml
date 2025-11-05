@@ -1,55 +1,67 @@
-# 將 mesh 內對 httpbin.org 的流量先導向 Egress Gateway
+# --- egress-route.yaml ---
+
+# (1) Gateway：建立 egressgateway 的 httpbin 通道
 apiVersion: networking.istio.io/v1beta1
-kind: DestinationRule
+kind: Gateway
 metadata:
-  name: egressgateway-for-httpbin
-  namespace: default
+  name: httpbin-egress-gateway
+  namespace: istio-system
 spec:
-  host: istio-egressgateway.istio-system.svc.cluster.local
-  subsets:
-  - name: httpbin
+  selector:
+    istio: egressgateway
+  servers:
+    - port:
+        number: 443
+        name: tls
+        protocol: TLS
+      hosts:
+        - httpbin.org
+      tls:
+        mode: PASSTHROUGH
+
 ---
+# (2) mesh 內 → egressgateway
 apiVersion: networking.istio.io/v1beta1
 kind: VirtualService
 metadata:
-  name: direct-through-egressgateway
+  name: httpbin-via-egress
   namespace: default
 spec:
   hosts:
-  - "httpbin.org"
+    - httpbin.org
   gateways:
-  - mesh
+    - mesh
+    - istio-system/httpbin-egress-gateway
   tls:
-  - match:
-    - port: 443
-      sniHosts:
-      - "httpbin.org"
-    route:
-    - destination:
-        host: istio-egressgateway.istio-system.svc.cluster.local
-        subset: httpbin
-        port:
-          number: 443
-      weight: 100
+    - match:
+        - port: 443
+          sniHosts:
+            - httpbin.org
+      route:
+        - destination:
+            host: istio-egressgateway.istio-system.svc.cluster.local
+            port:
+              number: 443
+
 ---
-# 再從 Egress Gateway 轉送到外部 httpbin.org
+# (3) egressgateway → 外部 httpbin.org
 apiVersion: networking.istio.io/v1beta1
 kind: VirtualService
 metadata:
-  name: from-egressgateway-to-httpbin
+  name: httpbin-from-egress-to-external
   namespace: istio-system
 spec:
   hosts:
-  - "httpbin.org"
+    - httpbin.org
   gateways:
-  - istio-egressgateway
+    - httpbin-egress-gateway
   tls:
-  - match:
-    - port: 443
-      sniHosts:
-      - "httpbin.org"
-    route:
-    - destination:
-        host: httpbin.org
-        port:
-          number: 443
+    - match:
+        - port: 443
+          sniHosts:
+            - httpbin.org
+      route:
+        - destination:
+            host: httpbin.org
+            port:
+              number: 443

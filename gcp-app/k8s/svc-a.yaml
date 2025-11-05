@@ -18,7 +18,7 @@ spec:
       serviceAccountName: service-a
       containers:
       - name: app
-        image: asia-east1-docker.pkg.dev/zero-trust-demo-475103/gcp-app/service-a:1.0
+        image: asia-east1-docker.pkg.dev/zero-trust-demo-475103/gcp-app/service-a:v1
         env:
         - name: SERVICE_B_HOST
           value: "service-b.default.svc.cluster.local"

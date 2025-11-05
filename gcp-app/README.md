@@ -3,7 +3,7 @@
 ```bash
 PROJECT_ID=zero-trust-demo-475103  \
 REGION=asia-east1 \
-ZONE=$REGION-b \
+ZONE=asia-east1-b \
 REPO=gcp-app \
 CLUSTER=zta-cluster
 ```
@@ -43,12 +43,12 @@ gcloud auth configure-docker $REGION-docker.pkg.dev -q
 
 ```bash
 # service-a
-docker build -t $REGION-docker.pkg.dev/$PROJECT_ID/$REPO/service-a:latest gcp-app/service-a
-docker push $REGION-docker.pkg.dev/$PROJECT_ID/$REPO/service-a:latest
+docker build -t $REGION-docker.pkg.dev/$PROJECT_ID/$REPO/service-a:v1 gcp-app/service-a
+docker push $REGION-docker.pkg.dev/$PROJECT_ID/$REPO/service-a:v1
 
 # service-b
-docker build -t $REGION-docker.pkg.dev/$PROJECT_ID/$REPO/service-b:latest gcp-app/service-b
-docker push $REGION-docker.pkg.dev/$PROJECT_ID/$REPO/service-b:latest
+docker build -t $REGION-docker.pkg.dev/$PROJECT_ID/$REPO/service-b:v1 gcp-app/service-b
+docker push $REGION-docker.pkg.dev/$PROJECT_ID/$REPO/service-b:v1
 ```
 
 **安裝 Istio**
@@ -113,7 +113,7 @@ gcloud container clusters delete $CLUSTER --zone=$ZONE --project=$PROJECT_ID
 **網頁測試**
 
 ```txt
-http://<EXTERNAL-IP>/
+http://35.201.249.209/
 ```
 
 **CURL 測試**
