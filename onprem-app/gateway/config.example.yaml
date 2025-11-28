@@ -1,0 +1,14 @@
+# onprem/gateway/config.example.yaml
+
+service_b:
+  url: "https://service-b.local:8443"
+
+security:
+  jwt_secret: "CHANGE_ME_TO_STRONG_SECRET"
+  service_shared_secret: "CHANGE_ME_TO_STRONG_SERVICE_SECRET"
+
+tls:
+  enabled: true
+  ca_cert: "/certs/ca.pem"
+  client_cert: "/certs/gateway-cert.pem"
+  client_key: "/certs/gateway-key.pem"

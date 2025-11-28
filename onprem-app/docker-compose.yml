@@ -1,0 +1,32 @@
+# onprem/docker-compose.yml
+version: "3.9"
+
+services:
+  gateway:
+    build: ./gateway
+    container_name: zt-gateway
+    ports:
+      - "9000:9000"
+    environment:
+      SERVICE_B_URL: "http://service-b:8000"
+      JWT_SECRET: "dev_jwt_secret_change_me"
+      SERVICE_SHARED_SECRET: "dev_service_shared_secret_change_me"
+    depends_on:
+      - service-b
+
+  service-b:
+    build: ./service-b
+    container_name: zt-service-b
+    ports:
+      - "8000:8000"
+    environment:
+      SERVICE_SHARED_SECRET: "dev_service_shared_secret_change_me"
+
+  # 先註解掉，等你要玩 service-to-service 再打開
+  # service-a:
+  #   build: ./service-a
+  #   container_name: zt-service-a
+  #   ports:
+  #     - "9100:9100"
+  #   environment:
+  #     SERVICE_SHARED_SECRET: "dev_service_shared_secret_change_me"

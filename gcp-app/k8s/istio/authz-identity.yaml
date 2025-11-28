@@ -23,7 +23,7 @@ spec:
       app: service-b
   action: ALLOW
   rules:
-    # ① 給 ingress gateway 打 /public
+    # 給 ingress gateway 打 /public
     - from:
         - source:
             principals:
@@ -31,8 +31,7 @@ spec:
       to:
         - operation:
             paths: ["/public"]
-    # ② 給 default namespace 裡面的 pod 打 /private
-    #    這裡先放 service-a + default，讓你現在測得動
+    # 給 default namespace 裡面的 pod 打 /private
     - from:
         - source:
             principals:
