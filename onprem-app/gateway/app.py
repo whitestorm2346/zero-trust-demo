@@ -1,6 +1,6 @@
 # onprem/gateway/app.py
 from fastapi import FastAPI, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from pydantic import BaseModel
 import os
 import requests
@@ -47,14 +47,23 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> User:
 
 
 @app.post("/login", response_model=TokenResponse)
-async def login(req: LoginRequest):
-    user_record = FAKE_USERS_DB.get(req.username)
-    if not user_record or user_record["password"] != req.password:
+async def login(form_data: OAuth2PasswordRequestForm = Depends()):
+    """
+    這個版本符合 OAuth2 密碼模式：
+    - Swagger 的 Authorize 會送 form-data: username, password
+    - 我們用 form_data.username / form_data.password 來拿
+    """
+    username = form_data.username
+    password = form_data.password
+
+    user_record = FAKE_USERS_DB.get(username)
+    if not user_record or user_record["password"] != password:
         raise HTTPException(status_code=400, detail="Incorrect username or password")
 
     user = User(username=user_record["username"], role=user_record["role"])
     token = create_user_access_token(user)
     return TokenResponse(access_token=token)
+
 
 
 @app.get("/call/local/public")
@@ -70,6 +79,8 @@ async def call_local_public(current_user: User = Depends(get_current_user)):
         target_service="service-b",
         user_claims=user_claims,
     )
+
+    print("\n[DEBUG] Generated service token for /public:\n", service_token, "\n")
 
     try:
         r = requests.get(
@@ -104,6 +115,8 @@ async def call_local_private(current_user: User = Depends(get_current_user)):
         target_service="service-b",
         user_claims=user_claims,
     )
+
+    print("\n[DEBUG] Generated service token for /public:\n", service_token, "\n")
 
     try:
         r = requests.get(
