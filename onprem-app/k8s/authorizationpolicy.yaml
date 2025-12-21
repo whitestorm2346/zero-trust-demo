@@ -1,0 +1,13 @@
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-mesh-to-service-b
+  namespace: onprem-zta
+spec:
+  selector:
+    matchLabels:
+      app: service-b
+  rules:
+    - from:
+        - source:
+            principals: ["*"]  # 之後可以改成只允許 service-a 的 SA

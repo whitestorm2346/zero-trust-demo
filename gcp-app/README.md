@@ -18,12 +18,31 @@ gcloud container clusters create $CLUSTER \
   --machine-type=e2-standard-2 \
   --disk-type=pd-standard \
   --disk-size=30
+
+
+gcloud container clusters create $CLUSTER \
+  --region $REGION \
+  --release-channel regular \
+  --num-nodes 2 \
+  --machine-type e2-standard-4 \
+  --disk-type=pd-standard \
+  --disk-size=50 \
+  --enable-ip-alias
+```
+
+**Install Istio**
+
+```bash
+istioctl install -y \
+  --set profile=demo \
+  --set revision=canary \
+  --set components.cni.enabled=false
 ```
 
 **取得 cluster 憑證 (讓本機可以使用 `kubectl apply`)**
 
 ```bash
-gcloud container clusters get-credentials $CLUSTER --zone=$ZONE --project=$PROJECT_ID
+gcloud container clusters get-credentials $CLUSTER --region $REGION --project=$PROJECT_ID
 kubectl get nodes
 ```
 
@@ -44,11 +63,13 @@ gcloud auth configure-docker $REGION-docker.pkg.dev -q
 
 ```bash
 # service-a
-docker build -t $REGION-docker.pkg.dev/$PROJECT_ID/$REPO/service-a:v1 gcp-app/service-a
+docker build --no-cache \
+  -t $REGION-docker.pkg.dev/$PROJECT_ID/$REPO/service-a:v1 gcp-app/service-a
 docker push $REGION-docker.pkg.dev/$PROJECT_ID/$REPO/service-a:v1
 
 # service-b
-docker build -t $REGION-docker.pkg.dev/$PROJECT_ID/$REPO/service-b:v1 gcp-app/service-b
+docker build --no-cache \
+  -t $REGION-docker.pkg.dev/$PROJECT_ID/$REPO/service-b:v1 gcp-app/service-b
 docker push $REGION-docker.pkg.dev/$PROJECT_ID/$REPO/service-b:v1
 ```
 
@@ -56,7 +77,7 @@ docker push $REGION-docker.pkg.dev/$PROJECT_ID/$REPO/service-b:v1
 
 ```bash
 kubectl -n default set image deploy/service-a \
- app=$REGION-docker.pkg.dev/$PROJECT_ID/gcp-app/service-a:v2
+ app=$REGION-docker.pkg.dev/$PROJECT_ID/gcp-app/service-a:v1
 
 kubectl -n default rollout status deploy/service-a
 
@@ -74,7 +95,8 @@ istioctl install -y \
 **啟用 sidecar**
 
 ```bash
-kubectl apply -f gcp-app/k8s/namespace.yaml
+kubectl apply -f gcp-app/k8s/base/namespace.yaml
+kubectl apply -f gcp-app/k8s/base/sa.yaml
 kubectl apply -f gcp-app/k8s/istio/ns-injection.yaml
 kubectl apply -f gcp-app/k8s/istio/peer-authn-mtls.yaml
 ```
@@ -82,24 +104,51 @@ kubectl apply -f gcp-app/k8s/istio/peer-authn-mtls.yaml
 **部署兩個 services**
 
 ```bash
-kubectl apply -f gcp-app/k8s/svc-b.yaml
-kubectl apply -f gcp-app/k8s/svc-a.yaml
+kubectl apply -f gcp-app/k8s/base/svc-b.yaml
+kubectl apply -f gcp-app/k8s/base/svc-a.yaml
 
 kubectl rollout restart deploy/service-b
 kubectl rollout restart deploy/service-a
+
+kubectl delete pod -n default -l app=service-a
+kubectl delete pod -n default -l app=service-b
 kubectl get pods
 ```
 
 應該會看到兩個 Pod 都是 `2/2 READY`（代表 sidecar 已注入）。
 
+**建立 JWT 驗證**
+
+```bash
+kubectl apply -f gcp-app/k8s/istio/request-authn-jwt.yaml
+```
+
+**建立 AuthorizationPolicy**
+
+```bash
+kubectl apply -f gcp-app/k8s/istio/authz-service-b.yaml
+```
+
 **建立 ingress**
 
 ```bash
-kubectl apply -f gcp-app/k8s/istio/ingress-a.yaml
-kubectl get svc -n istio-system
+kubectl apply -f gcp-app/k8s/istio/gateway.yaml
+kubectl apply -f gcp-app/k8s/istio/virtualservice.yaml
+
+kubectl get svc -n istio-system istio-ingressgateway
+kubectl get svc -n istio-system istio-ingressgateway -o wide
+
 ```
 
 複製 `EXTERNAL-IP` 記下來，用來測試網站。
+
+**啟用 KeyCloak**
+
+```bash
+kubectl apply -f gcp-app/k8s/keycloak/namespace.yaml
+kubectl apply -f gcp-app/k8s/keycloak/deployment.yaml
+kubectl apply -f gcp-app/k8s/keycloak/service.yaml
+```
 
 **建立 egress 假外部**
 

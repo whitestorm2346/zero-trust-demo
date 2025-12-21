@@ -1,0 +1,23 @@
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: service-b-authz
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: service-b
+  rules:
+  # 1️⃣ public：任何人都可存取
+  - to:
+    - operation:
+        paths: ["/public"]
+
+  # 2️⃣ private：必須通過 JWT（檢查 claim）
+  - to:
+    - operation:
+        paths: ["/private"]
+    when:
+    - key: request.auth.claims[iss]
+      values: ["testing@secure.istio.io"]
+

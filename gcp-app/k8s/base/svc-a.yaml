@@ -11,9 +11,13 @@ metadata:
   namespace: default
 spec:
   replicas: 1
-  selector: { matchLabels: { app: service-a } }
+  selector:
+    matchLabels:
+      app: service-a
   template:
-    metadata: { labels: { app: service-a } }
+    metadata:
+      labels:
+        app: service-a
     spec:
       serviceAccountName: service-a
       containers:
@@ -24,7 +28,8 @@ spec:
           value: "service-b.default.svc.cluster.local"
         - name: SERVICE_B_PORT
           value: "8080"
-        ports: [{ containerPort: 8080 }]
+        ports:
+        - containerPort: 8080
         resources:
           requests:
             cpu: "100m"
@@ -39,5 +44,9 @@ metadata:
   name: service-a
   namespace: default
 spec:
-  selector: { app: service-a }
-  ports: [{ port: 8080, targetPort: 8080 }]
+  selector:
+    app: service-a
+  ports:
+  - name: http-8080        # ⭐ Istio 關鍵行
+    port: 8080
+    targetPort: 8080

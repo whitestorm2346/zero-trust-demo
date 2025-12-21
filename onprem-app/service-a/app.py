@@ -1,29 +1,14 @@
-# onprem/service-a/app.py
-from fastapi import FastAPI, Header, HTTPException
-from typing import Optional
+from fastapi import FastAPI
 
-from security import verify_service_token
+from routers import public, auth, data_proxy
 
-app = FastAPI(title="On-Prem Service A")
+app = FastAPI(
+    title="On-Prem Zero Trust Demo - Service A",
+    description="Service-A 作為對外入口，提供 Swagger UI、身份驗證與對 service-b 的代理",
+    version="1.0.0",
+)
 
-
-@app.get("/echo")
-async def echo(
-    x_service_id: Optional[str] = Header(None, alias="X-Service-Id"),
-    x_service_token: Optional[str] = Header(None, alias="X-Service-Token"),
-):
-    """
-    簡單示範：中間層 service
-    - 驗證來自 gateway 的 service token
-    - 目前只是回 echo，未串 service-b
-    """
-    if not x_service_id or not x_service_token:
-        raise HTTPException(status_code=401, detail="Missing service identity")
-
-    payload = verify_service_token(x_service_token, expected_target="service-a")
-
-    return {
-        "endpoint": "/echo",
-        "caller_service": x_service_id,
-        "token_payload": payload,
-    }
+# 路由註冊
+app.include_router(public.router, prefix="/public", tags=["public"])
+app.include_router(auth.router, prefix="/auth", tags=["auth"])
+app.include_router(data_proxy.router, prefix="/data", tags=["data"])

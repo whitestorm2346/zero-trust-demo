@@ -1,0 +1,13 @@
+# k8s/istio/request-authentication.yaml
+apiVersion: security.istio.io/v1
+kind: RequestAuthentication
+metadata:
+  name: service-a-jwt
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: service-a
+  jwtRules:
+  - issuer: "http://keycloak.keycloak.svc.cluster.local/realms/istio-demo"
+    jwksUri: "http://keycloak.keycloak.svc.cluster.local/realms/istio-demo/protocol/openid-connect/certs"

@@ -1,0 +1,19 @@
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: service-a-vs
+  namespace: onprem-zta
+spec:
+  hosts:
+    - "*"                        # ★ 一樣用 *，表示接受任何 Host
+  gateways:
+    - onprem-gateway             # ★ 要跟上面 Gateway 的名字一樣
+  http:
+    - match:
+        - uri:
+            prefix: "/"          # ★ 任何路徑都轉給 service-a
+      route:
+        - destination:
+            host: service-a.onprem-zta.svc.cluster.local
+            port:
+              number: 8000

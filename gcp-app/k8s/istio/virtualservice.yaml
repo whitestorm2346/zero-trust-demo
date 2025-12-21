@@ -1,0 +1,30 @@
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: zta-routing
+  namespace: default
+spec:
+  gateways:
+  - zta-gateway
+  hosts:
+  - "*"
+  http:
+  # 1️⃣ Keycloak（一定要放最前面）
+  - match:
+    - uri:
+        prefix: /auth
+    route:
+    - destination:
+        host: keycloak.keycloak.svc.cluster.local
+        port:
+          number: 8080
+
+  # 2️⃣ service-a（最後才吃 /）
+  - match:
+    - uri:
+        prefix: /
+    route:
+    - destination:
+        host: service-a.default.svc.cluster.local
+        port:
+          number: 8080

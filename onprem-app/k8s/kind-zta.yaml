@@ -1,0 +1,10 @@
+# kind-zta.yaml
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+  - role: control-plane
+    # 這段是讓你「需要的時候」可以把特定 containerPort 映射到 hostPort
+    extraPortMappings:
+      - containerPort: 8080   # 之後我們可以把 ingress gateway 或 service-a 映射到這
+        hostPort: 8080
+        protocol: TCP

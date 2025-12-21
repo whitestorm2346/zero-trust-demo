@@ -15,3 +15,17 @@
 cd onprem-app
 docker compose up -d --build
 ```
+
+## 套用 k8s YAML 檔
+
+```bash
+kubectl apply -f k8s/namespace.yaml
+kubectl apply -f k8s/service-a-deploy.yaml
+kubectl apply -f k8s/service-a-service.yaml
+kubectl apply -f k8s/service-b-deploy.yaml
+kubectl apply -f k8s/service-b-service.yaml
+kubectl apply -f k8s/istio-gateway.yaml
+kubectl apply -f k8s/virtualservice.yaml
+kubectl apply -f k8s/peerauthentication.yaml
+kubectl apply -f k8s/authorizationpolicy.yaml
+```

@@ -11,15 +11,20 @@ metadata:
   namespace: default
 spec:
   replicas: 1
-  selector: { matchLabels: { app: service-b } }
+  selector:
+    matchLabels:
+      app: service-b
   template:
-    metadata: { labels: { app: service-b } }
+    metadata:
+      labels:
+        app: service-b
     spec:
       serviceAccountName: service-b
       containers:
       - name: app
         image: asia-east1-docker.pkg.dev/zero-trust-demo-475103/gcp-app/service-b:v1
-        ports: [{ containerPort: 8080 }]
+        ports:
+        - containerPort: 8080
         resources:
           requests:
             cpu: "100m"
@@ -34,5 +39,9 @@ metadata:
   name: service-b
   namespace: default
 spec:
-  selector: { app: service-b }
-  ports: [{ port: 8080, targetPort: 8080 }]
+  selector:
+    app: service-b
+  ports:
+  - name: http-8080        # ⭐⭐⭐ 這一行是關鍵 ⭐⭐⭐
+    port: 8080
+    targetPort: 8080
