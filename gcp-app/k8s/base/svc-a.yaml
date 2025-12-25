@@ -18,6 +18,8 @@ spec:
     metadata:
       labels:
         app: service-a
+      annotations:
+        istio.io/rev: canary
     spec:
       serviceAccountName: service-a
       containers:

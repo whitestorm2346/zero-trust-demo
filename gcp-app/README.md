@@ -121,12 +121,20 @@ kubectl get pods
 
 ```bash
 kubectl apply -f gcp-app/k8s/istio/request-authn-jwt.yaml
+
+kubectl get requestauthentication -A
+kubectl delete requestauthentication jwt-auth -n default
+
 ```
 
 **建立 AuthorizationPolicy**
 
 ```bash
-kubectl apply -f gcp-app/k8s/istio/authz-service-b.yaml
+kubectl apply -f gcp-app/k8s/istio/authz-service-a-public.yaml
+kubectl apply -f gcp-app/k8s/istio/authz-service-a-private-admin.yaml
+
+kubectl get authorizationpolicy -n default
+kubectl get authorizationpolicy -A
 ```
 
 **建立 ingress**
@@ -146,8 +154,14 @@ kubectl get svc -n istio-system istio-ingressgateway -o wide
 
 ```bash
 kubectl apply -f gcp-app/k8s/keycloak/namespace.yaml
+kubectl apply -f gcp-app/k8s/keycloak/keycloak.yaml
 kubectl apply -f gcp-app/k8s/keycloak/deployment.yaml
 kubectl apply -f gcp-app/k8s/keycloak/service.yaml
+
+kubectl get pod -n keycloak
+
+kubectl port-forward -n keycloak deploy/keycloak 8080:8080
+kubectl port-forward pod/keycloak-7d875f74c5-fljdz 18080:8080
 ```
 
 **建立 egress 假外部**

@@ -3,7 +3,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 import requests
 import os
-from datetime import datetime, timedelta, timezone
+from jose import jwt
 
 DEMO_USERS = {
     "admin": {
@@ -41,15 +41,73 @@ def public_proxy():
 from fastapi import Request, HTTPException
 
 def get_identity(request: Request):
-    return {
-        "sub": request.headers.get("x-jwt-claim-sub"),
-        "role": request.headers.get("x-jwt-claim-role"),
-        "email": request.headers.get("x-jwt-claim-email"),
-    }
+    """
+    MODE 1: Istio / Envoy 已驗 JWT（x-jwt-claim-*）
+    MODE 2: Fallback demo mode，自行 decode Authorization Bearer JWT
+    """
+
+    # =========================
+    # MODE 1：Istio 已驗（原設計）
+    # =========================
+    sub = request.headers.get("x-jwt-claim-sub")
+    role = request.headers.get("x-jwt-claim-role")
+    email = request.headers.get("x-jwt-claim-email")
+
+    if sub:
+        print("[AUTH] mode=ISTIO")
+        return {
+            "sub": sub,
+            "role": role,
+            "email": email,
+        }
+
+    # =========================
+    # MODE 2：Fallback（demo 用）
+    # =========================
+    auth = request.headers.get("Authorization")
+    if not auth or not auth.startswith("Bearer "):
+        print("[AUTH] mode=NONE")
+        return {
+            "sub": None,
+            "role": None,
+            "email": None,
+        }
+
+    token = auth.split(" ", 1)[1]
+
+    try:
+        payload = jwt.decode(
+            token,
+            key="",
+            options={
+                "verify_signature": False,  # demo：不驗簽章
+                "verify_aud": False,
+                "verify_iss": False,
+            }
+        )
+
+        roles = payload.get("realm_access", {}).get("roles", [])
+
+        print("[AUTH] mode=FALLBACK")
+        return {
+            "sub": payload.get("sub"),
+            "role": roles[0] if roles else None,
+            "email": payload.get("email"),
+        }
+
+    except Exception as e:
+        print("[AUTH] fallback decode failed:", str(e))
+        return {
+            "sub": None,
+            "role": None,
+            "email": None,
+        }
 
 @app.get("/private")
 def private(request: Request):
     user = get_identity(request)
+
+    print(user)
 
     if not user["sub"]:
         raise HTTPException(status_code=401, detail="Unauthenticated")

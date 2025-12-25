@@ -1,9 +1,8 @@
-# k8s/keycloak/deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: keycloak
-  namespace: keycloak
+  namespace: default
 spec:
   replicas: 1
   selector:
@@ -13,34 +12,37 @@ spec:
     metadata:
       labels:
         app: keycloak
+      annotations:
+        sidecar.istio.io/inject: "true"
     spec:
       containers:
       - name: keycloak
-        image: quay.io/keycloak/keycloak:24.0.4
+        image: quay.io/keycloak/keycloak:24.0.3
         args:
           - start-dev
+        ports:
+          - containerPort: 8080
+
         env:
+          # ===== 基本帳號 =====
           - name: KEYCLOAK_ADMIN
             value: admin
           - name: KEYCLOAK_ADMIN_PASSWORD
-            value: admin
+            value: admin123
 
+          # ===== 關鍵：讓 Keycloak 認得 localhost =====
           - name: KC_PROXY
             value: edge
-          - name: KC_PROXY_HEADERS
-            value: xforwarded
 
-          - name: KC_HTTP_ENABLED
-            value: "true"
+          - name: KC_HOSTNAME
+            value: localhost
+
+          - name: KC_HOSTNAME_PORT
+            value: "8080"
 
           - name: KC_HOSTNAME_STRICT
             value: "false"
 
-          # 🔥 Cookie 關鍵（保留）
-          - name: KC_HTTP_COOKIE_SECURE
-            value: "false"
-          - name: KC_HTTP_COOKIE_SAMESITE
-            value: lax
-
-        ports:
-          - containerPort: 8080
+          # （可選）避免 https 檢查
+          - name: KC_HTTP_ENABLED
+            value: "true"

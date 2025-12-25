@@ -2,3 +2,4 @@ fastapi
 uvicorn
 requests
 pyjwt
+python-jose

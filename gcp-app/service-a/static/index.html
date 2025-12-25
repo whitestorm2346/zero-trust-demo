@@ -22,16 +22,16 @@
     <script>
       let token = null;
 
-      const KEYCLOAK_BASE = window.location.origin + "/auth";
-
+      const KEYCLOAK_BASE = "http://localhost:18080";
       const REALM = "istio-demo";
       const CLIENT_ID = "istio-client";
 
       function login() {
         const redirectUri = window.location.origin;
+        console.log("localhost keycloak login");
 
         const authUrl =
-          `${KEYCLOAK_BASE}/realms/istio-demo/protocol/openid-connect/auth` +
+          `${KEYCLOAK_BASE}/realms/${REALM}/protocol/openid-connect/auth` +
           `?client_id=${CLIENT_ID}` +
           `&response_type=token` +
           `&scope=openid` +
@@ -44,7 +44,6 @@
         if (!window.location.hash) return null;
 
         const params = new URLSearchParams(window.location.hash.substring(1));
-
         return params.get("access_token");
       }
 
@@ -53,6 +52,8 @@
         if (token) {
           document.getElementById("loginStatus").innerText =
             "Logged in via Keycloak";
+          // 清掉 URL fragment，比較乾淨
+          history.replaceState({}, document.title, window.location.pathname);
         }
       };
 
@@ -62,6 +63,8 @@
       }
 
       async function callPrivate() {
+        console.log("TOKEN =", token);
+
         if (!token) {
           alert("Please login first");
           return;
