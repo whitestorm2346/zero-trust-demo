@@ -1,0 +1,17 @@
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: service-a-allow-public
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: service-a
+  action: ALLOW
+  rules:
+  - to:
+    - operation:
+        paths:
+        - "/"
+        - "/public"
+        - "/static/*"

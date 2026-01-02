@@ -1,0 +1,31 @@
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: onprem-egress-route
+  namespace: default
+spec:
+  hosts:
+  - scores-curves-colored-von.trycloudflare.com
+  gateways:
+  - mesh
+  - istio-system/onprem-egress-gateway
+  tls:
+  # Pod → Egress Gateway
+  - match:
+    - gateways: ["mesh"]
+      sniHosts: ["scores-curves-colored-von.trycloudflare.com"]
+    route:
+    - destination:
+        host: istio-egressgateway.istio-system.svc.cluster.local
+        port:
+          number: 443
+
+  # Egress Gateway → On-Prem
+  - match:
+    - gateways: ["istio-system/onprem-egress-gateway"]
+      sniHosts: ["scores-curves-colored-von.trycloudflare.com"]
+    route:
+    - destination:
+        host: scores-curves-colored-von.trycloudflare.com
+        port:
+          number: 443

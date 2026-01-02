@@ -132,6 +132,7 @@ kubectl delete requestauthentication jwt-auth -n default
 ```bash
 kubectl apply -f gcp-app/k8s/istio/authz-service-a-public.yaml
 kubectl apply -f gcp-app/k8s/istio/authz-service-a-private-admin.yaml
+kubectl apply -f gcp-app/k8s/istio/authz-egress.yaml
 
 kubectl get authorizationpolicy -n default
 kubectl get authorizationpolicy -A
@@ -164,11 +165,12 @@ kubectl port-forward -n keycloak deploy/keycloak 8080:8080
 kubectl port-forward pod/keycloak-7d875f74c5-fljdz 18080:8080
 ```
 
-**建立 egress 假外部**
+**建立 egress**
 
 ```bash
-kubectl apply -f gcp-app/k8s/ext-external.yaml
-kubectl apply -f gcp-app/k8s/istio/egress-fake-external.yaml
+kubectl apply -f gcp-app/k8s/istio/egress-gateway.yaml
+kubectl apply -f gcp-app/k8s/istio/egress-serviceentry.yaml
+kubectl apply -f gcp-app/k8s/istio/egress-virtualservice.yaml
 ```
 
 **套用 Identity-tier Policy（加強側邊安全）**

@@ -16,6 +16,7 @@
     <h3>Actions</h3>
     <button onclick="callPublic()">Call Public</button>
     <button onclick="callPrivate()">Call Private</button>
+    <button id="fetchOnpremBtn">Fetch On-Prem Data</button>
 
     <pre id="result"></pre>
 
@@ -78,6 +79,30 @@
 
         document.getElementById("result").innerText = await resp.text();
       }
+
+      document
+        .getElementById("fetchOnpremBtn")
+        .addEventListener("click", async () => {
+          const resultBox = document.getElementById("result");
+          resultBox.textContent = "Loading...";
+
+          try {
+            const resp = await fetch("/api/onprem/data", {
+              method: "GET",
+              credentials: "include",
+            });
+
+            if (!resp.ok) {
+              const text = await resp.text();
+              throw new Error(text);
+            }
+
+            const data = await resp.json();
+            resultBox.textContent = JSON.stringify(data, null, 2);
+          } catch (err) {
+            resultBox.textContent = "Error: " + err.message;
+          }
+        });
     </script>
   </body>
 </html>

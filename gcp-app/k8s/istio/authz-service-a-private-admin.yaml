@@ -1,0 +1,35 @@
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: service-a-private-admin-only
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: service-a
+  action: ALLOW
+  rules:
+  - to:
+    - operation:
+        paths: ["/private"]
+
+# apiVersion: security.istio.io/v1
+# kind: AuthorizationPolicy
+# metadata:
+#   name: service-a-private-admin-only
+#   namespace: default
+# spec:
+#   selector:
+#     matchLabels:
+#       app: service-a
+#   action: ALLOW
+#   rules:
+#   - to:
+#     - operation:
+#         paths: ["/private"]
+#     from:
+#     - source:
+#         requestPrincipals: ["*"]
+#     when:
+#     - key: request.auth.claims[realm_access][roles]
+#       values: ["admin"]

@@ -126,3 +126,24 @@ def private(request: Request):
 
 
 
+ONPREM_URL = "https://scores-curves-colored-von.trycloudflare.com"
+
+@app.get("/api/onprem/data")
+def get_onprem_data():
+    try:
+        resp = requests.get(ONPREM_URL, timeout=5)
+    except requests.exceptions.RequestException as e:
+        raise HTTPException(status_code=502, detail=str(e))
+
+    if resp.status_code != 200:
+        raise HTTPException(
+            status_code=resp.status_code,
+            detail=resp.text
+        )
+
+    # 如果他回 JSON
+    if "application/json" in resp.headers.get("content-type", ""):
+        return resp.json()
+
+    # 如果他回純文字 / HTML
+    return {"data": resp.text}
